@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, ShoppingBag, Tag } from 'lucide-react';
+import { Phone, ShoppingBag, Tag, User } from 'lucide-react';
 import { Customer, Transaction } from '@/types/cashback';
 import { getCustomerByPhone, saveCustomer, saveTransaction, getSettings } from '@/utils/cashbackStorage';
 import { sendCashbackNotification, sendWelcomeNotification } from '@/utils/notificationService';
@@ -18,10 +18,13 @@ interface CashbackFormProps {
 
 const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [existingCustomer, setExistingCustomer] = useState<Customer | null>(null);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -34,6 +37,20 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
+    
+    // Verificar se o cliente já existe quando o telefone for alterado
+    if (formatted.length >= 14) { // Telefone completo formatado
+      const customer = getCustomerByPhone(formatted);
+      if (customer) {
+        setExistingCustomer(customer);
+        setIsNewCustomer(false);
+        setName(customer.name);
+      } else {
+        setExistingCustomer(null);
+        setIsNewCustomer(true);
+        setName('');
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +60,15 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
       toast({
         title: "Erro",
         description: "Por favor, preencha o telefone, valor da compra e categoria",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isNewCustomer && !name.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe o nome do cliente",
         variant: "destructive",
       });
       return;
@@ -67,12 +93,12 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
       const isEligibleCategory = settings.eligibleCategories.includes(category);
       const cashbackEarned = isEligibleCategory ? (purchaseAmount * settings.cashbackPercentage) / 100 : 0;
       
-      let customer = getCustomerByPhone(phone);
-      const isNewCustomer = !customer;
+      let customer = existingCustomer;
       
       if (!customer) {
         customer = {
           phone,
+          name: name.trim(),
           totalCashback: cashbackEarned,
           availableCashback: cashbackEarned,
           usedCashback: 0,
@@ -105,7 +131,7 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
         sendCashbackNotification(phone, cashbackEarned, 'earned');
         toast({
           title: "Compra Registrada! 🛒",
-          description: `Cashback de R$ ${cashbackEarned.toFixed(2)} creditado para ${phone}`,
+          description: `Cashback de R$ ${cashbackEarned.toFixed(2)} creditado para ${existingCustomer ? existingCustomer.name : name}`,
         });
       } else {
         toast({
@@ -115,9 +141,12 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
       }
 
       setPhone('');
+      setName('');
       setAmount('');
       setCategory('');
       setDescription('');
+      setIsNewCustomer(false);
+      setExistingCustomer(null);
       onTransactionAdded();
 
     } catch (error) {
@@ -159,7 +188,29 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
               maxLength={15}
               required
             />
+            {existingCustomer && (
+              <p className="text-sm text-green-600">
+                ✅ Cliente encontrado: {existingCustomer.name}
+              </p>
+            )}
           </div>
+
+          {isNewCustomer && (
+            <div className="space-y-2">
+              <Label htmlFor="name" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Nome do Cliente
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Digite o nome do cliente"
+                required
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="category" className="flex items-center gap-2">

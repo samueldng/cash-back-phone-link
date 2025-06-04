@@ -1,7 +1,6 @@
-
 export interface Customer {
   phone: string;
-  name?: string;
+  name: string;
   totalCashback: number;
   availableCashback: number;
   usedCashback: number;
