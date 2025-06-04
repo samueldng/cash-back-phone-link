@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, ShoppingBag, Tag, User } from 'lucide-react';
+import { Phone, ShoppingBag, User } from 'lucide-react';
 import { Customer, Transaction } from '@/types/cashback';
 import { getCustomerByPhone, saveCustomer, saveTransaction, getSettings } from '@/utils/cashbackStorage';
 import { sendCashbackNotification, sendWelcomeNotification } from '@/utils/notificationService';
@@ -20,7 +19,6 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isNewCustomer, setIsNewCustomer] = useState(false);
@@ -56,10 +54,10 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phone || !amount || !category) {
+    if (!phone || !amount) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha o telefone, valor da compra e categoria",
+        description: "Por favor, preencha o telefone e valor da compra",
         variant: "destructive",
       });
       return;
@@ -89,9 +87,9 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
     try {
       const settings = getSettings();
       
-      // Verifica se a categoria é elegível para cashback
-      const isEligibleCategory = settings.eligibleCategories.includes(category);
-      const cashbackEarned = isEligibleCategory ? (purchaseAmount * settings.cashbackPercentage) / 100 : 0;
+      // Categoria fixa: acessórios (sempre elegível para cashback)
+      const category = 'acessorios';
+      const cashbackEarned = (purchaseAmount * settings.cashbackPercentage) / 100;
       
       let customer = existingCustomer;
       
@@ -116,7 +114,7 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
         cashbackEarned,
         type: 'purchase',
         category,
-        description: description || `Compra de ${category} - R$ ${purchaseAmount.toFixed(2)}`,
+        description: description || `Compra de acessórios - R$ ${purchaseAmount.toFixed(2)}`,
         timestamp: new Date().toISOString(),
       };
 
@@ -127,23 +125,15 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
         sendWelcomeNotification(phone);
       }
       
-      if (cashbackEarned > 0) {
-        sendCashbackNotification(phone, cashbackEarned, 'earned');
-        toast({
-          title: "Compra Registrada! 🛒",
-          description: `Cashback de R$ ${cashbackEarned.toFixed(2)} creditado para ${existingCustomer ? existingCustomer.name : name}`,
-        });
-      } else {
-        toast({
-          title: "Compra Registrada! 🛒",
-          description: `Compra registrada sem cashback (categoria não elegível)`,
-        });
-      }
+      sendCashbackNotification(phone, cashbackEarned, 'earned');
+      toast({
+        title: "Compra Registrada! 🛒",
+        description: `Cashback de R$ ${cashbackEarned.toFixed(2)} creditado para ${existingCustomer ? existingCustomer.name : name}`,
+      });
 
       setPhone('');
       setName('');
       setAmount('');
-      setCategory('');
       setDescription('');
       setIsNewCustomer(false);
       setExistingCustomer(null);
@@ -166,10 +156,10 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-green-700">
           <ShoppingBag className="h-5 w-5" />
-          Registrar Compra
+          Registrar Compra de Acessórios
         </CardTitle>
         <CardDescription>
-          Registre uma nova compra - cashback de 2% apenas em acessórios
+          Registre uma nova compra de acessórios - 2% de cashback automático
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -211,24 +201,6 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
               />
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="category" className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
-              Categoria do Produto
-            </Label>
-            <Select value={category} onValueChange={setCategory} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="acessorios">Acessórios (2% cashback)</SelectItem>
-                <SelectItem value="roupas">Roupas (sem cashback)</SelectItem>
-                <SelectItem value="calcados">Calçados (sem cashback)</SelectItem>
-                <SelectItem value="outros">Outros (sem cashback)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="space-y-2">
             <Label htmlFor="amount">Valor da Compra (R$)</Label>
