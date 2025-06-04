@@ -14,6 +14,7 @@ export interface Transaction {
   amount: number;
   cashbackEarned: number;
   type: 'purchase' | 'redemption';
+  category?: string;
   description: string;
   timestamp: string;
 }
@@ -21,4 +22,5 @@ export interface Transaction {
 export interface CashbackSettings {
   cashbackPercentage: number;
   minimumRedemption: number;
+  eligibleCategories: string[];
 }
