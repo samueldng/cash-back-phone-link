@@ -1,3 +1,4 @@
+
 import { Customer, Transaction, CashbackSettings } from '@/types/cashback';
 
 const CUSTOMERS_KEY = 'cashback_customers';
@@ -17,7 +18,7 @@ export const getTransactions = (): Transaction[] => {
 export const getSettings = (): CashbackSettings => {
   const stored = localStorage.getItem(SETTINGS_KEY);
   return stored ? JSON.parse(stored) : {
-    cashbackPercentage: 2,
+    cashbackPercentage: 5,
     minimumRedemption: 20,
     eligibleCategories: ['acessorios']
   };

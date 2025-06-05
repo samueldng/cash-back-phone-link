@@ -9,7 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cashback_settings: {
+        Row: {
+          cashback_percentage: number
+          eligible_categories: string[]
+          id: number
+          minimum_redemption: number
+          updated_at: string
+        }
+        Insert: {
+          cashback_percentage?: number
+          eligible_categories?: string[]
+          id?: number
+          minimum_redemption?: number
+          updated_at?: string
+        }
+        Update: {
+          cashback_percentage?: number
+          eligible_categories?: string[]
+          id?: number
+          minimum_redemption?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          available_cashback: number
+          created_at: string
+          name: string
+          phone: string
+          total_cashback: number
+          updated_at: string
+          used_cashback: number
+        }
+        Insert: {
+          available_cashback?: number
+          created_at?: string
+          name: string
+          phone: string
+          total_cashback?: number
+          updated_at?: string
+          used_cashback?: number
+        }
+        Update: {
+          available_cashback?: number
+          created_at?: string
+          name?: string
+          phone?: string
+          total_cashback?: number
+          updated_at?: string
+          used_cashback?: number
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          cashback_earned: number
+          category: string | null
+          description: string
+          id: string
+          phone: string
+          timestamp: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          cashback_earned: number
+          category?: string | null
+          description: string
+          id: string
+          phone: string
+          timestamp?: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          cashback_earned?: number
+          category?: string | null
+          description?: string
+          id?: string
+          phone?: string
+          timestamp?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_phone_fkey"
+            columns: ["phone"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["phone"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

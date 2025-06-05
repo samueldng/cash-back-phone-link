@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,7 +158,7 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
           Registrar Compra de Acessórios
         </CardTitle>
         <CardDescription>
-          Registre uma nova compra de acessórios - 2% de cashback automático
+          Registre uma nova compra de acessórios - 5% de cashback automático
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -45,7 +45,7 @@ const Index = () => {
                 <div className="p-6 bg-white rounded-lg border shadow-sm">
                   <h3 className="font-semibold text-green-700 mb-3">Como Funciona</h3>
                   <ul className="space-y-2 text-sm text-gray-600">
-                    <li>• O cliente ganha 2% de cashback em compras de acessórios</li>
+                    <li>• O cliente ganha 5% de cashback em compras de acessórios</li>
                     <li>• Valor mínimo para resgate: R$ 20,00</li>
                     <li>• SMS automático enviado a cada transação</li>
                     <li>• Cashback pode ser usado em futuras compras</li>
