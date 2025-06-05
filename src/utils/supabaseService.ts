@@ -15,7 +15,14 @@ export const supabaseService = {
       return [];
     }
     
-    return data || [];
+    return data?.map(customer => ({
+      phone: customer.phone,
+      name: customer.name,
+      totalCashback: customer.total_cashback,
+      availableCashback: customer.available_cashback,
+      usedCashback: customer.used_cashback,
+      createdAt: customer.created_at,
+    })) || [];
   },
 
   async getCustomerByPhone(phone: string): Promise<Customer | null> {
@@ -30,13 +37,30 @@ export const supabaseService = {
       return null;
     }
     
-    return data;
+    if (!data) return null;
+    
+    return {
+      phone: data.phone,
+      name: data.name,
+      totalCashback: data.total_cashback,
+      availableCashback: data.available_cashback,
+      usedCashback: data.used_cashback,
+      createdAt: data.created_at,
+    };
   },
 
   async saveCustomer(customer: Customer): Promise<void> {
+    const dbCustomer = {
+      phone: customer.phone,
+      name: customer.name,
+      total_cashback: customer.totalCashback,
+      available_cashback: customer.availableCashback,
+      used_cashback: customer.usedCashback,
+    };
+
     const { error } = await supabase
       .from('customers')
-      .upsert(customer, { onConflict: 'phone' });
+      .upsert(dbCustomer, { onConflict: 'phone' });
     
     if (error) {
       console.error('Erro ao salvar cliente:', error);
@@ -56,7 +80,16 @@ export const supabaseService = {
       return [];
     }
     
-    return data || [];
+    return data?.map(transaction => ({
+      id: transaction.id,
+      phone: transaction.phone,
+      amount: transaction.amount,
+      cashbackEarned: transaction.cashback_earned,
+      type: transaction.type as 'purchase' | 'redemption',
+      category: transaction.category || undefined,
+      description: transaction.description,
+      timestamp: transaction.timestamp,
+    })) || [];
   },
 
   async getTransactionsByPhone(phone: string): Promise<Transaction[]> {
@@ -71,13 +104,32 @@ export const supabaseService = {
       return [];
     }
     
-    return data || [];
+    return data?.map(transaction => ({
+      id: transaction.id,
+      phone: transaction.phone,
+      amount: transaction.amount,
+      cashbackEarned: transaction.cashback_earned,
+      type: transaction.type as 'purchase' | 'redemption',
+      category: transaction.category || undefined,
+      description: transaction.description,
+      timestamp: transaction.timestamp,
+    })) || [];
   },
 
   async saveTransaction(transaction: Transaction): Promise<void> {
+    const dbTransaction = {
+      id: transaction.id,
+      phone: transaction.phone,
+      amount: transaction.amount,
+      cashback_earned: transaction.cashbackEarned,
+      type: transaction.type,
+      category: transaction.category || null,
+      description: transaction.description,
+    };
+
     const { error } = await supabase
       .from('transactions')
-      .insert(transaction);
+      .insert(dbTransaction);
     
     if (error) {
       console.error('Erro ao salvar transação:', error);
