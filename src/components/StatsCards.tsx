@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, DollarSign, TrendingUp, Gift } from 'lucide-react';
-import { getCustomers, getTransactions } from '@/utils/cashbackStorage';
+import { supabaseService } from '@/utils/supabaseService';
 
 const StatsCards = () => {
   const [stats, setStats] = useState({
@@ -11,25 +11,53 @@ const StatsCards = () => {
     totalCashbackGiven: 0,
     totalCashbackRedeemed: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const customers = getCustomers();
-    const transactions = getTransactions();
+    const loadStats = async () => {
+      setIsLoading(true);
+      try {
+        const [customers, transactions] = await Promise.all([
+          supabaseService.getCustomers(),
+          supabaseService.getTransactions()
+        ]);
 
-    const purchaseTransactions = transactions.filter(t => t.type === 'purchase');
-    const redemptionTransactions = transactions.filter(t => t.type === 'redemption');
+        const purchaseTransactions = transactions.filter(t => t.type === 'purchase');
+        const redemptionTransactions = transactions.filter(t => t.type === 'redemption');
 
-    const totalSales = purchaseTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const totalCashbackGiven = purchaseTransactions.reduce((sum, t) => sum + t.cashbackEarned, 0);
-    const totalCashbackRedeemed = redemptionTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalSales = purchaseTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const totalCashbackGiven = purchaseTransactions.reduce((sum, t) => sum + t.cashbackEarned, 0);
+        const totalCashbackRedeemed = redemptionTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-    setStats({
-      totalCustomers: customers.length,
-      totalSales,
-      totalCashbackGiven,
-      totalCashbackRedeemed,
-    });
+        setStats({
+          totalCustomers: customers.length,
+          totalSales,
+          totalCashbackGiven,
+          totalCashbackRedeemed,
+        });
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStats();
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="text-center text-gray-500">Carregando...</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

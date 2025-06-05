@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Phone, Gift, AlertCircle } from 'lucide-react';
 import { Customer, Transaction } from '@/types/cashback';
-import { getCustomerByPhone, saveCustomer, saveTransaction, getSettings } from '@/utils/cashbackStorage';
+import { supabaseService } from '@/utils/supabaseService';
 import { sendCashbackNotification } from '@/utils/notificationService';
 import { toast } from '@/hooks/use-toast';
 
@@ -19,6 +19,19 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
   const [amount, setAmount] = useState('');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [minimumRedemption, setMinimumRedemption] = useState(15);
+
+  React.useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await supabaseService.getSettings();
+        setMinimumRedemption(settings.minimumRedemption);
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -28,13 +41,18 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
     return value;
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
     
     if (formatted.length >= 14) {
-      const foundCustomer = getCustomerByPhone(formatted);
-      setCustomer(foundCustomer);
+      try {
+        const foundCustomer = await supabaseService.getCustomerByPhone(formatted);
+        setCustomer(foundCustomer);
+      } catch (error) {
+        console.error('Erro ao buscar cliente:', error);
+        setCustomer(null);
+      }
     } else {
       setCustomer(null);
     }
@@ -59,7 +77,6 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
     }
 
     const redeemAmount = parseFloat(amount);
-    const settings = getSettings();
 
     if (redeemAmount <= 0) {
       toast({
@@ -70,10 +87,10 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
       return;
     }
 
-    if (redeemAmount < settings.minimumRedemption) {
+    if (redeemAmount < minimumRedemption) {
       toast({
         title: "Erro",
-        description: `Valor mínimo para resgate é R$ ${settings.minimumRedemption.toFixed(2)}`,
+        description: `Valor mínimo para resgate é R$ ${minimumRedemption.toFixed(2)}`,
         variant: "destructive",
       });
       return;
@@ -107,8 +124,8 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
         timestamp: new Date().toISOString(),
       };
 
-      saveCustomer(updatedCustomer);
-      saveTransaction(transaction);
+      await supabaseService.saveCustomer(updatedCustomer);
+      await supabaseService.saveTransaction(transaction);
       sendCashbackNotification(phone, redeemAmount, 'redeemed');
 
       toast({
@@ -132,8 +149,6 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
       setIsLoading(false);
     }
   };
-
-  const settings = getSettings();
 
   return (
     <Card>
@@ -167,7 +182,9 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
           {customer && (
             <>
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h4 className="font-semibold text-green-800 mb-2">Saldo Disponível</h4>
+                <h4 className="font-semibold text-green-800 mb-2">
+                  Saldo Disponível - {customer.name}
+                </h4>
                 <p className="text-2xl font-bold text-green-600">
                   R$ {customer.availableCashback.toFixed(2)}
                 </p>
@@ -200,7 +217,7 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
               <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
                 <div className="text-sm text-yellow-800">
-                  <p className="font-medium">Valor mínimo para resgate: R$ {settings.minimumRedemption.toFixed(2)}</p>
+                  <p className="font-medium">Valor mínimo para resgate: R$ {minimumRedemption.toFixed(2)}</p>
                   <p>O cashback será descontado do saldo do cliente.</p>
                 </div>
               </div>
@@ -208,7 +225,7 @@ const RedeemCashback = ({ onRedemption }: RedeemCashbackProps) => {
               <Button 
                 type="submit" 
                 className="w-full cashback-gradient hover:opacity-90 transition-opacity"
-                disabled={isLoading || !amount || parseFloat(amount || '0') < settings.minimumRedemption}
+                disabled={isLoading || !amount || parseFloat(amount || '0') < minimumRedemption}
               >
                 {isLoading ? 'Processando...' : 'Resgatar Cashback'}
               </Button>

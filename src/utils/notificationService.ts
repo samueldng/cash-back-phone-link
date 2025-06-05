@@ -27,7 +27,7 @@ export const sendCashbackNotification = (phone: string, amount: number, type: 'e
 };
 
 export const sendWelcomeNotification = (phone: string) => {
-  const message = `🎯 Bem-vindo ao nosso programa de cashback! Compre acessórios e ganhe 2% de volta. Acumule e resgate na loja!`;
+  const message = `🎯 Bem-vindo ao nosso programa de cashback! Compre acessórios e ganhe 5% de volta. Acumule e resgate na loja!`;
   console.log(`📱 SMS de boas-vindas para ${phone}:`, message);
   
   toast({

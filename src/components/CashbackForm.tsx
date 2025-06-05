@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Phone, ShoppingBag, User } from 'lucide-react';
 import { Customer, Transaction } from '@/types/cashback';
-import { getCustomerByPhone, saveCustomer, saveTransaction, getSettings } from '@/utils/cashbackStorage';
+import { supabaseService } from '@/utils/supabaseService';
 import { sendCashbackNotification, sendWelcomeNotification } from '@/utils/notificationService';
 import { toast } from '@/hooks/use-toast';
 
@@ -31,21 +32,24 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
     return value;
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
     setPhone(formatted);
     
-    // Verificar se o cliente já existe quando o telefone for alterado
-    if (formatted.length >= 14) { // Telefone completo formatado
-      const customer = getCustomerByPhone(formatted);
-      if (customer) {
-        setExistingCustomer(customer);
-        setIsNewCustomer(false);
-        setName(customer.name);
-      } else {
-        setExistingCustomer(null);
-        setIsNewCustomer(true);
-        setName('');
+    if (formatted.length >= 14) {
+      try {
+        const customer = await supabaseService.getCustomerByPhone(formatted);
+        if (customer) {
+          setExistingCustomer(customer);
+          setIsNewCustomer(false);
+          setName(customer.name);
+        } else {
+          setExistingCustomer(null);
+          setIsNewCustomer(true);
+          setName('');
+        }
+      } catch (error) {
+        console.error('Erro ao buscar cliente:', error);
       }
     }
   };
@@ -84,9 +88,8 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
     setIsLoading(true);
 
     try {
-      const settings = getSettings();
+      const settings = await supabaseService.getSettings();
       
-      // Categoria fixa: acessórios (sempre elegível para cashback)
       const category = 'acessorios';
       const cashbackEarned = (purchaseAmount * settings.cashbackPercentage) / 100;
       
@@ -117,8 +120,8 @@ const CashbackForm = ({ onTransactionAdded }: CashbackFormProps) => {
         timestamp: new Date().toISOString(),
       };
 
-      saveCustomer(customer);
-      saveTransaction(transaction);
+      await supabaseService.saveCustomer(customer);
+      await supabaseService.saveTransaction(transaction);
 
       if (isNewCustomer) {
         sendWelcomeNotification(phone);

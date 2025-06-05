@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Phone, Wallet, Search } from 'lucide-react';
-import { getCustomerByPhone } from '@/utils/cashbackStorage';
+import { supabaseService } from '@/utils/supabaseService';
 import { Customer } from '@/types/cashback';
 
 const CashbackBalance = () => {
   const [phone, setPhone] = useState('');
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
@@ -27,16 +28,25 @@ const CashbackBalance = () => {
     setNotFound(false);
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!phone) return;
     
-    const foundCustomer = getCustomerByPhone(phone);
-    if (foundCustomer) {
-      setCustomer(foundCustomer);
-      setNotFound(false);
-    } else {
+    setIsLoading(true);
+    try {
+      const foundCustomer = await supabaseService.getCustomerByPhone(phone);
+      if (foundCustomer) {
+        setCustomer(foundCustomer);
+        setNotFound(false);
+      } else {
+        setCustomer(null);
+        setNotFound(true);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar cliente:', error);
       setCustomer(null);
       setNotFound(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -68,7 +78,7 @@ const CashbackBalance = () => {
             />
           </div>
           <div className="flex items-end">
-            <Button onClick={handleSearch} disabled={!phone}>
+            <Button onClick={handleSearch} disabled={!phone || isLoading}>
               <Search className="h-4 w-4" />
             </Button>
           </div>
@@ -76,7 +86,7 @@ const CashbackBalance = () => {
 
         {customer && (
           <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-800 mb-3">Saldo do Cliente</h3>
+            <h3 className="font-semibold text-green-800 mb-3">Saldo do Cliente: {customer.name}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">

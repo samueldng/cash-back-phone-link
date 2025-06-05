@@ -4,13 +4,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { History, TrendingUp, TrendingDown } from 'lucide-react';
 import { Transaction } from '@/types/cashback';
-import { getTransactions } from '@/utils/cashbackStorage';
+import { supabaseService } from '@/utils/supabaseService';
 
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setTransactions(getTransactions().slice(0, 10)); // Últimas 10 transações
+    const loadTransactions = async () => {
+      setIsLoading(true);
+      try {
+        const allTransactions = await supabaseService.getTransactions();
+        setTransactions(allTransactions.slice(0, 10));
+      } catch (error) {
+        console.error('Erro ao carregar transações:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTransactions();
   }, []);
 
   const formatDate = (timestamp: string) => {
@@ -26,6 +39,24 @@ const TransactionHistory = () => {
   const formatPhone = (phone: string) => {
     return phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-green-700">
+            <History className="h-5 w-5" />
+            Histórico de Transações
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-gray-500 py-8">
+            Carregando transações...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
