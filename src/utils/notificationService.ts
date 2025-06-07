@@ -2,11 +2,17 @@
 import { toast } from '@/hooks/use-toast';
 import { sendSMS } from './smsService';
 
+const getTrackingUrl = (phone: string) => {
+  const encodedPhone = encodeURIComponent(phone);
+  return `${window.location.origin}/pontos/${encodedPhone}`;
+};
+
 export const sendCashbackNotification = async (phone: string, amount: number, type: 'earned' | 'redeemed') => {
   let message = '';
+  const trackingUrl = getTrackingUrl(phone);
   
   if (type === 'earned') {
-    message = `🎉 Parabéns! Você ganhou R$ ${amount.toFixed(2)} em cashback na compra de acessórios! Acumule mais e resgate na nossa loja.`;
+    message = `🎉 Parabéns! Você ganhou R$ ${amount.toFixed(2)} em cashback! Acompanhe seus pontos e veja produtos disponíveis: ${trackingUrl}`;
     
     toast({
       title: "Cashback Creditado! 🎉",
@@ -14,7 +20,7 @@ export const sendCashbackNotification = async (phone: string, amount: number, ty
       duration: 5000,
     });
   } else {
-    message = `✅ Seu cashback de R$ ${amount.toFixed(2)} foi resgatado com sucesso! Aproveite sua compra!`;
+    message = `✅ Seu cashback de R$ ${amount.toFixed(2)} foi resgatado com sucesso! Continue acumulando pontos: ${trackingUrl}`;
     
     toast({
       title: "Cashback Resgatado! ✅",
@@ -38,7 +44,8 @@ export const sendCashbackNotification = async (phone: string, amount: number, ty
 };
 
 export const sendWelcomeNotification = async (phone: string) => {
-  const message = `🎯 Bem-vindo ao nosso programa de cashback! Compre acessórios e ganhe 5% de volta. Acumule e resgate na loja!`;
+  const trackingUrl = getTrackingUrl(phone);
+  const message = `🎯 Bem-vindo ao nosso programa de cashback! Ganhe 5% em acessórios. Acompanhe seus pontos: ${trackingUrl}`;
   
   toast({
     title: "Cliente Cadastrado! 🎯",
