@@ -1,12 +1,12 @@
 
 import { toast } from '@/hooks/use-toast';
 import { sendSMS } from './smsService';
-import { shortenUrl } from './urlShortener';
 
 const getTrackingUrl = (phone: string) => {
   const encodedPhone = encodeURIComponent(phone);
-  const fullUrl = `${window.location.origin}/pontos/${encodedPhone}`;
-  return shortenUrl(fullUrl);
+  // Usar o domínio de produção do Netlify
+  const fullUrl = `https://annycashback.netlify.app/pontos/${encodedPhone}`;
+  return fullUrl;
 };
 
 export const sendCashbackNotification = async (phone: string, amount: number, type: 'earned' | 'redeemed') => {
